@@ -9,7 +9,7 @@ interface TodoItemProps {
   todo: Task;
   onToggle: (id: number) => void;
   onDelete: (id: number) => void;
-  onUpdate: (id: number, title: string, description?: string) => void;
+  onUpdate: (id: number, title: string, description?: string, dueDate?: string | null, priority?: 'low' | 'medium' | 'high', workType?: 'personal' | 'work' | 'study' | 'home' | 'other') => void;
   disabled?: boolean;
 }
 
@@ -17,9 +17,12 @@ export function TodoItem({ todo, onToggle, onDelete, onUpdate, disabled }: TodoI
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(todo.title);
   const [editDescription, setEditDescription] = useState(todo.description || "");
+  const [editDueDate, setEditDueDate] = useState<string | null>(todo.dueDate || null);
+  const [editPriority, setEditPriority] = useState<'low' | 'medium' | 'high'>(todo.priority || 'medium');
+  const [editWorkType, setEditWorkType] = useState<'personal' | 'work' | 'study' | 'home' | 'other'>(todo.workType || 'personal');
 
   const handleSave = () => {
-    onUpdate(todo.id, editTitle, editDescription);
+    onUpdate(todo.id, editTitle, editDescription, editDueDate, editPriority, editWorkType);
     setIsEditing(false);
   };
 
@@ -43,6 +46,59 @@ export function TodoItem({ todo, onToggle, onDelete, onUpdate, disabled }: TodoI
             onChange={(e) => setEditDescription(e.target.value)}
             placeholder="Add a description..."
           />
+
+          {/* Edit form for new fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Due Date Editor */}
+            <div>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                Due Date
+              </label>
+              <input
+                type="date"
+                value={editDueDate || ""}
+                onChange={(e) => setEditDueDate(e.target.value || null)}
+                className="w-full p-2 bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-foreground/10 outline-none text-sm"
+              />
+            </div>
+
+            {/* Priority Editor */}
+            <div>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                Priority
+              </label>
+              <select
+                value={editPriority}
+                onChange={(e) => setEditPriority(e.target.value as any)}
+                className="w-full p-2 bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-foreground/10 outline-none text-sm"
+              >
+                {(['low', 'medium', 'high'] as const).map((level) => (
+                  <option key={level} value={level}>
+                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Work Type Editor */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                Type of Work
+              </label>
+              <select
+                value={editWorkType}
+                onChange={(e) => setEditWorkType(e.target.value as any)}
+                className="w-full p-2 bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-foreground/10 outline-none text-sm"
+              >
+                {(['personal', 'work', 'study', 'home', 'other'] as const).map((type) => (
+                  <option key={type} value={type}>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="flex justify-end space-x-3 mt-2">
             <button
               onClick={() => setIsEditing(false)}
@@ -94,6 +150,36 @@ export function TodoItem({ todo, onToggle, onDelete, onUpdate, disabled }: TodoI
               ) : (
                 <p className="text-[10px] font-bold text-muted-foreground/30 mt-1 uppercase tracking-[0.2em]">No description provided</p>
               )}
+
+              {/* Additional Task Details */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {/* Priority Indicator */}
+                {todo.priority && (
+                  <span className={`inline-flex items-center px-2 py-1 text-xs font-bold rounded-full ${
+                    todo.priority === 'low'
+                      ? 'bg-green-500/20 text-green-600 dark:text-green-400'
+                      : todo.priority === 'medium'
+                        ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
+                        : 'bg-red-500/20 text-red-600 dark:text-red-400'
+                  }`}>
+                    {todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1)}
+                  </span>
+                )}
+
+                {/* Work Type Badge */}
+                {todo.workType && (
+                  <span className="inline-flex items-center px-2 py-1 text-xs font-bold rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                    {todo.workType.charAt(0).toUpperCase() + todo.workType.slice(1)}
+                  </span>
+                )}
+
+                {/* Due Date */}
+                {todo.dueDate && (
+                  <span className="inline-flex items-center px-2 py-1 text-xs font-bold rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-400">
+                    📅 {new Date(todo.dueDate).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex space-x-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

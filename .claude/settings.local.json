@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npx create-next-app@latest:*)",
-      "Bash(find backend/src -name \"*.py\" -exec grep -l \"auth\\\\|login\\\\|register\\\\|signup\" {} ;)"
+      "Bash(find backend/src -name \"*.py\" -exec grep -l \"auth\\\\|login\\\\|register\\\\|signup\" {} ;)",
+      "Bash(python -m alembic revision --autogenerate -m \"add due_date, priority, work_type fields to tasks table\")"
     ]
   }
 }

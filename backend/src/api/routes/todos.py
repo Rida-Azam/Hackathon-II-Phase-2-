@@ -15,6 +15,13 @@ def create_todo(
     current_user: str = Depends(get_current_user)
 ):
     task.user_id = current_user
+
+    # Apply default values if not provided
+    if not hasattr(task, 'priority') or not task.priority:
+        task.priority = "medium"
+    if not hasattr(task, 'work_type') or not task.work_type:
+        task.work_type = "personal"
+
     task.created_at = datetime.utcnow()
     task.updated_at = datetime.utcnow()
     session.add(task)
@@ -57,7 +64,13 @@ def update_todo(
         print(f"[API] Todo {id} not found or access denied")
         raise HTTPException(status_code=404, detail="Todo not found")
 
+    # Apply default values for priority and work_type if not provided in update
     task_data = task_update.dict(exclude_unset=True)
+    if "priority" not in task_data:
+        task_data["priority"] = db_task.priority
+    if "work_type" not in task_data:
+        task_data["work_type"] = db_task.work_type
+
     for key, value in task_data.items():
         if key not in ["id", "user_id", "created_at"]:
             setattr(db_task, key, value)

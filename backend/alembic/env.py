@@ -1,5 +1,4 @@
 import os
-from logging.config import file_config
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
@@ -17,8 +16,7 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-if config.config_file_name is not None:
-    file_config(config.config_file_name)
+# Removed logging configuration to avoid import issues in newer Python versions
 
 # add your model's MetaData object here
 # for 'autogenerate' support
