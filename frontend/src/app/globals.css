@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+  --border: rgba(15, 23, 42, 0.08);
+  --sidebar: #ffffff;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #EDEDED;
+  --card: #1A1A1A;
+  --card-foreground: #EDEDED;
+  --muted: #71717A;
+  --muted-foreground: #A1A1AA;
+  --accent: #FFFFFF;
+  --accent-foreground: #000000;
+  --border: rgba(255, 255, 255, 0.1);
+  --sidebar: #000000;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --font-inter: var(--font-inter);
+  --font-poppins: var(--font-poppins);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), ui-sans-serif, system-ui;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-poppins), ui-sans-serif, system-ui;
+}

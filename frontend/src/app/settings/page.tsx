@@ -14,10 +14,14 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    const userData = getUserFromSession();
-    if (userData) {
-      setUser(userData);
-    }
+    const frame = requestAnimationFrame(() => {
+      const userData = getUserFromSession();
+      if (userData) {
+        setUser(userData);
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   return (

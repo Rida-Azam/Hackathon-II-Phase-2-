@@ -27,16 +27,68 @@ export default function SignupPage() {
     setError("");
 
     try {
-      // Generate a real JWT token with user information
-      const { generateJWT } = await import("@/lib/jwt");
-      const token = await generateJWT({
-        sub: email, // Use email as user ID for now
-        email: email,
-        name: name || email.split('@')[0], // Use provided name or extract from email
-        avatar: null
+      console.log("[Debug] Attempting to connect to:", `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`);
+
+      // Call the backend API for registration
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          name
+        }),
       });
 
-      console.log("[Debug] Generated JWT token for new user");
+      console.log("[Debug] Registration response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log("[Debug] Registration error response:", errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { detail: errorText || "Registration failed" };
+        }
+        throw new Error(errorData.detail || "Registration failed");
+      }
+
+      const data = await response.json();
+      console.log("[Debug] Registration successful:", data);
+
+      // Now log in the newly registered user
+      const loginResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password
+        }),
+      });
+
+      console.log("[Debug] Login response status:", loginResponse.status);
+
+      if (!loginResponse.ok) {
+        const errorText = await loginResponse.text();
+        console.log("[Debug] Login error response:", errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { detail: errorText || "Login after registration failed" };
+        }
+        throw new Error(errorData.detail || "Login after registration failed");
+      }
+
+      const loginData = await loginResponse.json();
+      const token = loginData.access_token;
+
+      console.log("[Debug] Received token from backend after registration:", token);
 
       // Set cookie first for middleware
       document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
@@ -48,8 +100,12 @@ export default function SignupPage() {
       // Force a full page reload to ensure middleware picks up the cookie
       window.location.href = "/todos";
     } catch (err) {
-      console.error("[Debug] Signup error:", err);
-      setError("Failed to create account");
+      console.error("[Debug] Signup error details:", err);
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError("Network error: Unable to connect to the server. Please check if the backend is running.");
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to create account");
+      }
     }
   };
 

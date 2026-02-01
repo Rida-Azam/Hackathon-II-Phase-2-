@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { isAxiosError } from "axios";
 import { Task } from "@/types/todo";
 import { TodoItem } from "@/components/TodoItem";
 import { Plus, LogOut } from "lucide-react";
@@ -18,6 +19,30 @@ export default function TodosPage() {
   const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
 
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem("auth_token");
+    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    window.location.href = "/login";
+  }, []);
+
+  const fetchTodos = useCallback(async () => {
+    try {
+      const response = await api.get("/api/todos/");
+      setTodos(response.data);
+      setError("");
+    } catch (err: unknown) {
+      if (isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
+        handleLogout();
+      } else if (isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Connection error");
+      } else {
+        setError("Connection error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [handleLogout]);
+
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     if (!token) {
@@ -25,31 +50,19 @@ export default function TodosPage() {
       return;
     }
     setAuthChecked(true);
-    fetchTodos();
-  }, [router]);
 
-  const fetchTodos = async () => {
-    try {
-      const response = await api.get("/api/todos/");
-      setTodos(response.data);
-      setError("");
-    } catch (err: any) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        handleLogout();
-      } else {
-        setError(err.response?.data?.detail || "Connection error");
-      }
-    } finally {
+    fetchTodos().catch(() => {
+      setError("Connection error");
       setLoading(false);
-    }
-  };
+    });
+  }, [router, fetchTodos]);
 
   const handleAddTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
     try {
       const response = await api.post("/api/todos/", { title: newTitle });
-      setTodos([...todos, response.data]);
+      setTodos((prev) => [...prev, response.data]);
       setNewTitle("");
     } catch (err) {
       console.error("Failed to add", err);
@@ -61,8 +74,12 @@ export default function TodosPage() {
     try {
       await api.put(`/api/todos/${id}/`, { title, description });
       await fetchTodos();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message);
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.detail || err.message);
+      } else {
+        setError("Connection error");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -74,8 +91,12 @@ export default function TodosPage() {
     try {
       await api.delete(`/api/todos/${id}/`);
       await fetchTodos();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message);
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.detail || err.message);
+      } else {
+        setError("Connection error");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -86,17 +107,15 @@ export default function TodosPage() {
     try {
       await api.patch(`/api/todos/${id}/complete/`);
       await fetchTodos();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message);
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.detail || err.message);
+      } else {
+        setError("Connection error");
+      }
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("auth_token");
-    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-    window.location.href = "/login";
   };
 
   if (!authChecked) {
@@ -125,11 +144,11 @@ export default function TodosPage() {
                 <p className="text-muted-foreground font-medium mt-1">Manage your professional workflow</p>
               </div>
               <button
-                 onClick={handleLogout}
-                 className="flex items-center text-[10px] font-bold text-muted-foreground hover:text-red-500 uppercase tracking-widest transition-colors mb-2"
+                onClick={handleLogout}
+                className="flex items-center text-[10px] font-bold text-muted-foreground hover:text-red-500 uppercase tracking-widest transition-colors mb-2"
               >
-                  <LogOut size={14} className="mr-2" />
-                  Sign Out
+                <LogOut size={14} className="mr-2" />
+                Sign Out
               </button>
             </header>
 
@@ -149,6 +168,12 @@ export default function TodosPage() {
               </button>
             </form>
 
+            {error && (
+              <div className="text-center text-red-500 text-xs font-bold uppercase tracking-[0.3em] bg-red-500/5 border border-red-500/10 rounded-2xl py-3">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-6">
               {loading ? (
                 [1, 2, 3].map((i) => (
@@ -156,7 +181,9 @@ export default function TodosPage() {
                 ))
               ) : todos.length === 0 ? (
                 <div className="text-center py-32 border border-dashed border-white/10 rounded-[3rem] bg-white/[0.02]">
-                  <p className="text-muted-foreground font-bold text-xs uppercase tracking-[0.2em] opacity-50">Empty Workspace</p>
+                  <p className="text-muted-foreground font-bold text-xs uppercase tracking-[0.2em] opacity-50">
+                    Empty Workspace
+                  </p>
                   <p className="text-foreground/40 mt-2 text-sm font-medium">Add a task to start productivity</p>
                 </div>
               ) : (

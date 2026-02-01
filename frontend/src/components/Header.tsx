@@ -9,10 +9,14 @@ export function Header() {
   const [userName, setUserName] = useState('User');
 
   useEffect(() => {
-    const user = getUserFromSession();
-    if (user?.name) {
-      setUserName(user.name);
-    }
+    const frame = requestAnimationFrame(() => {
+      const user = getUserFromSession();
+      if (user?.name) {
+        setUserName(user.name);
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, []);
   return (
     <header className="h-20 px-8 flex items-center justify-between bg-background/50 backdrop-blur-xl border-b border-white/5 sticky top-0 z-10">

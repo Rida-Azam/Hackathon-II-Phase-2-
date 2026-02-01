@@ -26,16 +26,38 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Generate a real JWT token with user information
-      const { generateJWT } = await import("@/lib/jwt");
-      const token = await generateJWT({
-        sub: email, // Use email as user ID for now
-        email: email,
-        name: email.split('@')[0], // Extract name from email
-        avatar: null
+      console.log("[Debug] Attempting to connect to:", `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`);
+
+      // Call the backend API for authentication
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password
+        }),
       });
 
-      console.log("[Debug] Generated JWT token");
+      console.log("[Debug] Login response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log("[Debug] Login error response:", errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { detail: errorText || "Login failed" };
+        }
+        throw new Error(errorData.detail || "Login failed");
+      }
+
+      const data = await response.json();
+      const token = data.access_token;
+
+      console.log("[Debug] Received token from backend:", token);
 
       // Set cookie first for middleware
       document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
@@ -47,8 +69,12 @@ export default function LoginPage() {
       // Force a full page reload to ensure middleware picks up the cookie
       window.location.href = "/todos";
     } catch (err) {
-      console.error("[Debug] Login error:", err);
-      setError("Failed to login");
+      console.error("[Debug] Login error details:", err);
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError("Network error: Unable to connect to the server. Please check if the backend is running.");
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to login");
+      }
     }
   };
 

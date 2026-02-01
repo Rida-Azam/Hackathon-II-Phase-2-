@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CheckCircle2, Layout, Zap, Shield, ArrowRight } from "lucide-react";
-import { AuthCard } from "@/components/AuthCard";
 import { FeatureCard } from "@/components/FeatureCard";
 
 const features = [
@@ -36,13 +35,17 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    setMounted(true);
-    // Check if user is already signed in
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      router.replace("/todos");
-    }
+    const frame = requestAnimationFrame(() => {
+      setMounted(true);
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        router.replace("/todos");
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, [router]);
+
 
   if (!mounted) {
     return null; // Avoid hydration mismatch

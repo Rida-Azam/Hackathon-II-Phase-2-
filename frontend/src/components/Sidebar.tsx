@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LayoutDashboard, CheckSquare, Calendar, Bell, FileText, Settings, User } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Calendar, Bell, Settings, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,6 @@ const navItems = [
   { id: "tasks", label: "Tasks", href: "/todos", icon: CheckSquare },
   { id: "calendar", label: "Calendar", href: "/calendar", icon: Calendar },
   { id: "reminders", label: "Reminders", href: "/reminders", icon: Bell },
-  { id: "notes", label: "Notes", href: "/notes", icon: FileText },
   { id: "settings", label: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -22,10 +21,14 @@ export function Sidebar() {
   const [userName, setUserName] = useState('User');
 
   useEffect(() => {
-    const user = getUserFromSession();
-    if (user?.name) {
-      setUserName(user.name);
-    }
+    const frame = requestAnimationFrame(() => {
+      const user = getUserFromSession();
+      if (user?.name) {
+        setUserName(user.name);
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   return (
