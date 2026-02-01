@@ -69,10 +69,11 @@ export default function TodosPage() {
     }
   };
 
-  const handleUpdate = async (id: number, title: string, description: string | null) => {
+  const handleUpdate = async (id: number, title: string, description?: string) => {
     setIsProcessing(true);
     try {
-      await api.put(`/api/todos/${id}/`, { title, description });
+      const safeDescription = description ?? null;
+      await api.put(`/api/todos/${id}/`, { title, description: safeDescription });
       await fetchTodos();
     } catch (err: unknown) {
       if (isAxiosError(err)) {
